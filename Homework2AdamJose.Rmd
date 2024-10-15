@@ -1,4 +1,4 @@
----
+I[---
 title: "Homework 2 Adam Jose"
 author: "Adam Jose - SDS 313 UT Austin"
 output:
@@ -12,7 +12,7 @@ editor_options:
 ```{r global_options, echo=FALSE}
 knitr::opts_chunk$set(fig.height=3, fig.width=4, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), echo = FALSE)
 ```
-
+I'm about to nuke ur code lil bro.
 ------------------------------------------------------------------------
 
 Github is so fun. We are learning Github stuff in SDS 313.
