@@ -15,6 +15,7 @@ knitr::opts_chunk$set(fig.height=3, fig.width=4, warning=FALSE, tidy=TRUE, tidy.
 
 ------------------------------------------------------------------------
 
+Github is so fun. We are learning Github stuff in SDS 313.
 
 Inspired by Dr. Convit’s work, we will investigate the prevalence of leprosy in countries across the globe.
 
