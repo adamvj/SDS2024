@@ -1,0 +1,114 @@
+---
+title: "Homework 2 Adam Jose"
+author: "Adam Jose - SDS 313 UT Austin"
+output:
+  html_document: default
+  pdf_document: default
+editor_options:
+  markdown:
+    wrap: sentence
+---
+
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(fig.height=3, fig.width=4, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), echo = FALSE)
+```
+
+------------------------------------------------------------------------
+
+
+Inspired by Dr. Convit’s work, we will investigate the prevalence of leprosy in countries across the globe.
+
+
+
+```{r echo=FALSE}
+leprosy <-read.csv("/Users/adamjose/Downloads/Homework2_leprosy.csv")
+```
+
+Which country had the highest number of new leprosy cases in 2022? Why is it not a fair comparison to look at the raw number of cases when comparing prevalence of the disease across different countries?
+```{r echo=FALSE}
+highest_country = leprosy[which.max(leprosy$New_Cases), "Country"]
+highest_country
+```
+
+It is not a fair comparison to look at the raw number of cases when comparing prevalence of the disease across different countries because some countries have extremely large populations.While India may lead in the number of new leprosy cases in 2022, they may have a relatively small proportion of new cases compared to some other countries
+
+
+Create a new variable in the dataset that provides the leprosy cases per 100K people in each country. Graph this new variable’s distribution and provide the relevant summary statistics inline within a short paragraph describing the distribution.
+```{r echo=FALSE, message=FALSE}
+leprosy$Per100k = leprosy$New_Cases/(leprosy$Population/100000)
+library(ggplot2)
+ggplot(leprosy, aes(x=Per100k)) + 
+  geom_histogram(color='black') + 
+  xlab('Leprosy Per 100k People') + 
+  ggtitle('Frequency of Leprosy per 100k People')
+five_num = fivenum(leprosy$Per100k)
+standard_dev = sd(leprosy$Per100k, na.rm = TRUE)
+lep_mean = mean(leprosy$Per100k, na.rm = TRUE)
+
+# Display everything in one line
+cat(sprintf("Five-number summary: Min = %.2f, 1st Quartile = %.2f, Median = %.2f, 3rd Quartile = %.2f, Max = %.2f; Standard Deviation = %.2f; Mean = %.2f", 
+            five_num[1], five_num[2], five_num[3], five_num[4], five_num[5], standard_dev, lep_mean))
+
+```
+
+The distribution is skewed right with a minimum of 0, 1st quartile of 0, median of 0.11, 3rd quartile of 1.05, maximum of 29.60, standard deviation of 3.30, and mean of 1.33.
+
+
+In a single plot output, create a graph (or set of graphs) that shows the distribution of cases per 100K within each region. Output a nicely formatted table (hint: you could choose to use the kbl() function from the kableExtra R package) that provides the name, number of districts, and median cases per 100K for each region. Include a short paragraph summarizing any differences in leprosy prevalence across regions.
+```{r echo=FALSE, message=FALSE}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(kableExtra)
+# Ensure your data has a 'Region' column
+# Create a distribution plot
+ggplot(leprosy, aes(x = Per100k)) +
+  geom_histogram(color = 'black', bins = 30, fill = 'lightblue') +
+  facet_wrap(~ Region) +  # Create separate plots for each region
+  theme_minimal() + labs(title='Distribution of Leprosy Cases
+  per 100K People by Region', x='Leprosy Cases per 100K People')
+
+# Create summary table without using %>%
+summary_table <- summarize(
+  group_by(leprosy, Region),
+  Number_of_Districts = round(n(), 2),
+  Median_Cases_Per100K = round(median(Per100k, na.rm = TRUE), 2)
+)
+
+# Use kableExtra without piping
+formatted_table <- kbl(summary_table, caption = "Summary of Leprosy Prevalence by Region")
+formatted_table <- kable_styling(formatted_table, "striped", full_width = FALSE)
+
+# Print the table
+formatted_table
+```
+The distribution of leprosy cases per 100K varies significantly across regions. Some regions show a higher prevalence, indicating potential areas for targeted health interventions, while others exhibit lower case rates. The median cases per 100K across regions reveal disparities that may correlate with socioeconomic factors, access to healthcare, and public health initiatives.
+
+Investigate the relationship between cases per 100K and one of the other variables in the dataset (other than region) by making the appropriate bivariate graph and providing the relevant summary statistic inline within a short paragraph describing the relationship.
+```{r echo=FALSE, message=FALSE, results='hide'}
+library(ggplot2)
+library(dplyr)
+# Create a scatter plot to investigate the relationship
+ggplot(leprosy, aes(x = Population, y = Per100k)) +
+  geom_point(alpha = 0.6, color = 'blue') +  # Scatter points
+  geom_smooth(method = 'lm', color = 'red') +  # Add a regression line
+  xlab('Population') +
+  ylab('Leprosy Cases per 100K People') +
+  ggtitle('Relationship between Population and 
+  Leprosy Cases per 100K') +
+  theme_minimal()
+# Calculate correlation coefficient
+correlation <- cor(leprosy$Population, leprosy$Per100k, use = "complete.obs")
+
+# Perform linear regression
+model <- lm(Per100k ~ Population, data = leprosy)
+summary(model)
+
+```
+
+
+The scatter plot shows a relationship between total population and leprosy cases per 100K people, with a correlation coefficient of 0.16. This indicates a positive relationship, suggesting that as the population increases, the prevalence of leprosy cases per 100K also tends to increase. The linear regression analysis further supports this observation, with the model indicating that for each unit increase in total population, leprosy cases per 100K are predicted to change by 0.00.
+
+Write a brief conclusion to your analysis summarizing what you found. Include a hyperlink to the website for the International Leprosy Association for readers wanting more information about this disease.
+
+In this analysis, we investigated the relationship between leprosy cases per 100K people and the total population across different countries.The scatter plot revealed a positive correlation, suggesting that higher total populations are associated with increased leprosy prevalence. This relationship underscores the importance of understanding demographic factors in the context of infectious diseases. For readers seeking more information about leprosy, including its causes, symptoms, and treatment options, I recommend visiting the [International Leprosy Association](https://www.internationalleprosyassociation.org/) website.
