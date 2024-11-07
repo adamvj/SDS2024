@@ -1,0 +1,215 @@
+---
+title: "Homework 7"
+author: "Adam Jose - SDS 313 UT Austin"
+output:
+  html_document: default
+  df_print: tibble
+  pdf_document: default
+editor_options:
+  markdown:
+    wrap: sentence
+---
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(fig.height=3, fig.width=4, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), message = FALSE)
+```
+
+## Question 1
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(lubridate)
+library(knitr)
+
+# Define the function to correct date formats
+fix_date <- function(date_string) {
+  # Split the date into its components
+  date_parts <- unlist(strsplit(date_string, "/"))
+  
+  # Check if the first part of the date is greater than 12, which indicates "day/month/year"
+  if (as.numeric(date_parts[1]) > 12) {
+    # Print message about the correction
+    message(paste("I fixed the incorrect date:", date_string))
+    
+    # Swap day and month to make it "month/day/year"
+    corrected_date <- paste(date_parts[2], date_parts[1], date_parts[3], sep = "/")
+    
+    return(corrected_date)
+  }
+  
+  # Return the original date if no correction is needed
+  return(date_string)
+}
+
+# Test the function with the example date
+test_date <- "29/6/22"
+corrected_test_date <- fix_date(test_date)
+print(corrected_test_date)
+
+# Load the monkeypox dataset
+monkeypox_data <- read.csv("/Users/adamjose/Downloads/monkeypox.csv")
+
+# Apply the fix_date function to the Date.Full column to correct the dates
+monkeypox_data$Date.Full <- sapply(monkeypox_data$Date.Full, fix_date)
+
+# Convert the corrected dates to Date format
+monkeypox_data$Corrected_Date <- mdy(monkeypox_data$Date.Full)
+
+# Display the dataset with the corrected date variable
+kable(head(monkeypox_data))
+
+```
+
+## Question 2
+
+```{r fig.width=10, fig.height=6}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+
+# Define the function to plot cumulative monkeypox cases for two countries
+plot_monkeypox_cases <- function(country1, country2 = "Argentina", colors = c("blue", "red")) {
+  # Standardize country names to lower case to handle case-insensitivity
+  country1 <- tolower(country1)
+  country2 <- tolower(country2)
+  
+  # Filter the data for the two specified countries, ignoring case sensitivity
+  filtered_data <- monkeypox_data %>%
+    filter(tolower(Country) %in% c(country1, country2)) %>%
+    mutate(Country = factor(Country, levels = unique(Country)))  # Ensure unique colors in plot
+  
+  # Create the plot
+  p <- ggplot(filtered_data, aes(x = Corrected_Date, y = Data.Cases.Cum, color = Country)) +
+    geom_line(size = 1.2) +
+    scale_color_manual(values = colors) +
+    labs(title = paste("Cumulative Monkeypox Cases in", country1, "and", country2),
+         x = "Date",
+         y = "Cumulative Cases",
+         color = "Country") +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 14),
+      axis.title.x = element_text(size = 12),
+      axis.title.y = element_text(size = 12)
+    )
+  
+  # Print the plot
+  print(p)
+}
+
+# Test the function with "switzerland" and "BELGIUM"
+plot_monkeypox_cases("switzerland", "BELGIUM", colors = c("pink", "purple"))
+
+```
+## Question 3
+```{r fig.width=10, fig.height=6}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+
+# Define the function to plot cumulative monkeypox cases with an option for raw or per million counts
+plot_monkeypox_cases <- function(country1, country2 = "Argentina", colors = c("blue", "red"), count_type = "raw") {
+  # Standardize country names to lowercase to handle case-insensitivity
+  country1 <- tolower(country1)
+  country2 <- tolower(country2)
+  
+  # Filter the data for the two specified countries, ignoring case sensitivity
+  filtered_data <- monkeypox_data %>%
+    filter(tolower(Country) %in% c(country1, country2)) %>%
+    mutate(Country = factor(Country, levels = unique(Country)))  # Ensure unique colors in plot
+  
+  # Determine which count type to plot
+  if (count_type == "million") {
+    y_var <- "Data.Cases.Cum.per.million"
+    y_label <- "Cumulative Cases per Million People"
+    title_label <- paste("Cumulative Monkeypox Cases per Million in", country1, "and", country2)
+  } else {
+    y_var <- "Data.Cases.Cum"
+    y_label <- "Cumulative Cases"
+    title_label <- paste("Cumulative Monkeypox Cases in", country1, "and", country2)
+  }
+  
+  # Create the plot
+  p <- ggplot(filtered_data, aes(x = Corrected_Date, y = .data[[y_var]], color = Country)) +
+    geom_line(size = 1.2) +
+    scale_color_manual(values = colors) +
+    labs(title = title_label,
+         x = "Date",
+         y = y_label,
+         color = "Country") +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 14),
+      axis.title.x = element_text(size = 12),
+      axis.title.y = element_text(size = 12)
+    )
+  
+  # Print the plot
+  print(p)
+}
+
+# Test the function with "switzerland" and "BELGIUM" for raw counts
+plot_monkeypox_cases("switzerland", "BELGIUM", colors = c("pink", "purple"), count_type = "raw")
+
+# Test the function with "switzerland" and "BELGIUM" for million counts
+plot_monkeypox_cases("switzerland", "BELGIUM", colors = c("pink", "purple"), count_type = "million")
+
+```
+## Question 4
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+
+# Define the function to find the country with the highest cases and optionally plot a histogram
+highest_cases_by_date <- function(date, want.plot = FALSE) {
+  # Convert input date to Date format for consistent filtering
+  date <- as.Date(date, format = "%m/%d/%y")
+  
+  # Filter the dataset for the specified date
+  date_data <- monkeypox_data %>%
+    filter(Corrected_Date == date)
+  
+  # Check if the date is present in the dataset and if there are at least two countries with data
+  if (nrow(date_data) < 2) {
+    stop("Task cannot be done because there are not enough countries with case counts on that date.")
+  }
+  
+  # Find the country with the highest cumulative cases
+  max_case_country <- date_data %>%
+    filter(Data.Cases.Cum == max(Data.Cases.Cum)) %>%
+    slice(1)  # Pick the first one if there is a tie
+  
+  # Return a sentence with the country and the case count
+  result <- paste("On", format(date, "%m/%d/%y"), ",", max_case_country$Country, 
+                  "had the highest number of cumulative cases with", max_case_country$Data.Cases.Cum, "cases.")
+  
+  # If want.plot is TRUE, display a histogram of cumulative cases for the specified date
+  if (want.plot) {
+    ggplot(date_data, aes(x = Data.Cases.Cum)) +
+      geom_histogram(binwidth = 10, fill = "skyblue", color = "black") +
+      labs(title = paste("Cumulative Monkeypox Cases on", format(date, "%m/%d/%y")),
+           x = "Cumulative Cases",
+           y = "Count of Countries") +
+      theme_minimal() +
+      theme(
+        plot.title = element_text(hjust = 0.5, size = 14),
+        axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12)
+      )
+  }
+  
+  return(result)
+}
+
+# Test the function with want.plot = TRUE
+print(highest_cases_by_date("07/15/22", want.plot = TRUE))
+
+# Test the function with want.plot = FALSE
+print(highest_cases_by_date("07/15/22", want.plot = FALSE))
+
+# Test the error message by commenting out the code
+# print(highest_cases_by_date("11/01/24", want.plot = TRUE))
+# The error message works as expected when "11/01/24" is provided as the date input.
+
+```
+
